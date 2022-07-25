@@ -1,65 +1,144 @@
 import { Film } from '../Film';
 
+enum QueryEnum {
+    Search, Popular, Upcoming, TopRated
+}
+
 export class Search {
 
     private readonly SEARCH_API = 'https://api.themoviedb.org/3/search/movie';
 
     private readonly TOP_RATED_API = 'https://api.themoviedb.org/3/movie/top_rated';
     private readonly POPULAR_API = 'https://api.themoviedb.org/3/movie/popular';
-    private readonly UPCOMING_API = 'https://api.themoviedb.org/3/movie/upcoming'
+    private readonly UPCOMING_API = 'https://api.themoviedb.org/3/movie/upcoming';
 
     private readonly API_KEY = '?api_key=de99f9bb1275997f321464fec53514bc';
 
     private page = 1;
 
-    public async Search(query: string) {
-        this.page = 1;
+    private lastAction: QueryEnum | undefined = QueryEnum.Popular;
+
+    public async Search(query: string, inPage = 1, clear = true) {
+        let page_address = '&page=' + this.page;
+
+        if (inPage)
+            page_address = '&page=' + inPage
+        else
+            this.page = 1;
 
         const q = `&query=${query}`;
-        const page_address = '&page=' + this.page;
+
 
         fetch(`${this.SEARCH_API}${this.API_KEY}${q}${page_address}`)
             .then(response => response.json())
-            .then(file => Search.Map(file.results))
-            .then(movies => Search.GenerateHtml(movies));
+            .then(file => this.Map(file.results))
+            .then(movies => {
+                this.GenerateHtml(movies, clear);
+                this.RandomMovie(movies);
+                this.lastAction = QueryEnum.Search;
+            });
 
     }
 
-    public async TopRated() {
-        this.page = 1;
+    public async TopRated(inPage = 1, clear = true) {
+        let page_address = '&page=' + this.page;
 
-        const page_address = '&page=' + this.page;
+        if (inPage)
+            page_address = '&page=' + inPage
+        else
+            this.page = 1;
 
         fetch(`${this.TOP_RATED_API}${this.API_KEY}${page_address}`)
             .then(response => response.json())
-            .then(file => Search.Map(file.results))
-            .then(movies => Search.GenerateHtml(movies));
+            .then(file => this.Map(file.results))
+            .then(movies => {
+                this.GenerateHtml(movies, clear);
+                this.RandomMovie(movies);
+                this.lastAction = QueryEnum.TopRated;
+            });
     }
 
-    public async Upcoming() {
-        this.page = 1;
+    public async Upcoming(inPage = 1, clear = true) {
+        let page_address = '&page=' + this.page;
 
-        const page_address = '&page=' + this.page;
+        if (inPage)
+            page_address = '&page=' + inPage
+        else
+            this.page = 1;
+
 
         fetch(`${this.UPCOMING_API}${this.API_KEY}${page_address}`)
             .then(response => response.json())
-            .then(file => Search.Map(file.results))
-            .then(movies => Search.GenerateHtml(movies));
+            .then(file => this.Map(file.results))
+            .then(movies => {
+                this.GenerateHtml(movies, clear);
+                this.RandomMovie(movies);
+                this.lastAction = QueryEnum.Upcoming;
+            });
     }
 
-    public async Popular() {
+    public async Popular(inPage = 1, clear = true) {
+        let page_address = '&page=' + this.page;
 
-        this.page = 1;
+        if (inPage)
+            page_address = '&page=' + inPage
+        else
+            this.page = 1;
 
-        const page_address = `&page=${this.page}`;
 
         fetch(`${this.POPULAR_API}${this.API_KEY}${page_address}`)
             .then(response => response.json())
-            .then(file => Search.Map(file.results))
-            .then(movies => Search.GenerateHtml(movies));
+            .then(file => this.Map(file.results))
+            .then(movies => {
+                this.GenerateHtml(movies, clear);
+                this.RandomMovie(movies);
+                this.lastAction = QueryEnum.Popular;
+            });
     }
 
-    private static Map(obj: any[]): Film[] {
+    public LoadMore() {
+        const searchInput = document.getElementById('search') as HTMLInputElement;
+        switch (this.lastAction) {
+            case QueryEnum.Search:
+                this.Search(searchInput.value, ++this.page, false);
+                break;
+            case QueryEnum.Popular:
+                this.Popular(++this.page, false);
+                break;
+            case QueryEnum.TopRated:
+                this.TopRated(this.page, false);
+                break;
+            case QueryEnum.Upcoming:
+                this.Upcoming(this.page, false);
+                break;
+        }
+
+    }
+
+    private RandomMovie(movies: Film[]) {
+        const i = Math.floor(Math.random() * (movies.length));
+
+        const div = document.getElementById('random-movie')!;
+        div.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${movies[i].backdrop_path})`;
+        div.style.backgroundPosition = `center`;
+        div.style.backgroundSize = `cover`;
+        div.style.backgroundRepeat = `no-repeat`;
+        div.innerHTML = `<div class='row py-lg-5'>
+                    <div
+                        class='col-lg-6 col-md-8 mx-auto'
+                        style='background-color: #2525254f'
+                    >
+                        <h1 id='random-movie-name' class='fw-light text-light'>${movies[i].title}</h1>
+                        <p id='random-movie-description' class='lead text-white'>
+                            ${movies[i].overview}
+                        </p>
+                    </div>
+                </div>`;
+
+
+    }
+
+    private Map(obj: any[]): Film[] {
         const result = new Array<Film>();
 
         for (const film of obj) {
@@ -69,17 +148,15 @@ export class Search {
         return result;
     }
 
-    private static GenerateHtml(movies: Film[]): void {
+    private GenerateHtml(movies: Film[], clear = true): void {
         const film_container = document.getElementById('film-container') as HTMLDivElement;
 
-        film_container.innerHTML = '';
+        if (clear) film_container.innerHTML = '';
 
         for (const movie of movies) {
-            if(movie.backdrop_path == null)
-                break;
+            if (movie.backdrop_path == null) break;
 
-            film_container.insertAdjacentHTML('beforeend',
-                `<div class='col-lg-3 col-md-4 col-12 p-2'>
+            film_container.insertAdjacentHTML('beforeend', `<div class='col-lg-3 col-md-4 col-12 p-2'>
                             <div class='card shadow-sm'>
                                 <img src='https://image.tmdb.org/t/p/original/${movie.backdrop_path}'/>
         <svg

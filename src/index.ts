@@ -1,16 +1,18 @@
 import { Search } from "./Partial/Search"
 export async function render(): Promise<void> {
     // TODO render your app here
-    const a = new Search();
-    a.Popular()
+    const builder = new Search();
+    builder.Popular()
 
 
-    document.getElementById('popular')!.addEventListener('click', () => a.Popular())
-    document.getElementById('top_rated')!.addEventListener('click', () => a.TopRated())
-    document.getElementById('upcoming')!.addEventListener('click', () => a.Upcoming())
+    document.getElementById('popular')!.addEventListener('click', () => builder.Popular())
+    document.getElementById('top_rated')!.addEventListener('click', () => builder.TopRated())
+    document.getElementById('upcoming')!.addEventListener('click', () => builder.Upcoming())
 
     const searchInput = document.getElementById('search') as HTMLInputElement;
 
     document.getElementById('submit')!
-        .addEventListener('click', () => a.Search(searchInput.value))
+        .addEventListener('click', () => builder.Search(searchInput.value, 1, true))
+
+    document.getElementById('load-more')!.addEventListener('click', () => builder.LoadMore())
 }
