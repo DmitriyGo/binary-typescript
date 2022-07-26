@@ -1,8 +1,8 @@
-import { Service } from "./Service"
+import { MainService } from "./Services/Main.service"
 import { log } from 'util';
 export async function render(): Promise<void> {
     // TODO render your app here
-    const builder = new Service();
+    const builder = new MainService();
     await builder.Popular()
     builder.RenderFavorite()
 

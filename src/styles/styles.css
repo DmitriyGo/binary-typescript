@@ -4,3 +4,8 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
 }
+#random-movie{
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
